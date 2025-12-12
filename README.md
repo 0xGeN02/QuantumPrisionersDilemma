@@ -211,18 +211,16 @@ Este proyecto está bajo la licencia MIT. Ver `LICENSE` para más detalles.
 
 ## 👨‍🎓 Autor
 
-**[Tu Nombre]**  
-Master en [Tu Programa]  
-[Tu Universidad]  
-Email: [tu.email@ejemplo.com]
-
-Supervisor: Prof. [Nombre del Supervisor]
+**Manuel Mateo Delgado-Gambino López**  
+Ingeniería en Sistemas Inteligentes
+UiE
+[@0xGeN02](https://github.com/0xGeN02)
 
 ## 🙏 Agradecimientos
 
 - Rigetti Computing por PyQuil
 - Eisert, Wilkens y Lewenstein por el protocolo original
-- [Tu Universidad] por el apoyo institucional
+- UiE por el apoyo institucional
 
 ---
 
@@ -230,10 +228,10 @@ Supervisor: Prof. [Nombre del Supervisor]
 
 ```bibtex
 @misc{quantum_prisoners_dilemma_2025,
-  author = {[Tu Nombre]},
+  author = {Manuel Mateo Delgado-Gambino López},
   title = {Teoría de Juegos Cuánticos: Una Implementación del Dilema del Prisionero Cuantizado},
   year = {2025},
-  publisher = {GitHub},
+  publisher = {@0xGeN02},
   url = {https://github.com/0xGeN02/QuantumPrisionersDilemma}
 }
 ```
