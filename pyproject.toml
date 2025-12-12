@@ -1,0 +1,21 @@
+[project]
+name = "quantumprisionersdilemma"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "0xGeN02",email = "manuelmateodgl02@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "pyquil (>=4.17.0,<5.0.0)",
+    "matplotlib (>=3.10.8,<4.0.0)",
+    "numpy (>=2.3.5,<3.0.0)",
+    "ipykernel (>=7.1.0,<8.0.0)",
+    "seaborn (>=0.13.2,<0.14.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
