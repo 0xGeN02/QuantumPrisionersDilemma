@@ -28,87 +28,49 @@ def juego_con_deteccion_trampa():
     qc = get_qc('2q-qvm')
     
     # Programa principal
-    p = Program()
-    
+    # Para cumplir con ProtoQuil, hacemos dos "rondas" en dos shots independientes y comparamos resultados en Python
+    p1 = Program()
+    p2 = Program()
+
     # Declarar memoria clásica
-    # 'ro' será la memoria de salida por shot (2 bits)
-    ro = p.declare('ro', 'BIT', 2)
-    primera_medicion = p.declare('primera', 'BIT', 1)
-    segunda_medicion = p.declare('segunda', 'BIT', 1)
-    # es_tramposo queda solo como concepto; usaremos un X en el qubit 0 como "penalización"
-    
-    # === PRIMERA TIRADA ===
-    p += H(1)                          # Jugador 2 aleatorio
-    p += MEASURE(0, primera_medicion[0])  # Medición 1 del Jugador 1 (guardada en 'primera')
-    p += MEASURE(1, ro[1])             # Guardamos J2 en ro[1]
-    
-    # Resetear qubits para segunda tirada
-    p += RESET(0)
-    p += RESET(1)
-    
-    # === SEGUNDA TIRADA ===
-    p += H(1)                          # Jugador 2 aleatorio otra vez
-    p += MEASURE(0, segunda_medicion[0])  # Medición 2 del Jugador 1 (guardada en 'segunda')
-    
-    # === COMPARACIÓN CLÁSICA Y PENALIZACIÓN (QUIL EXPLÍCITO) ===
-    # Queremos: if (primera == segunda) then X 0
-    # Como sólo tenemos JUMP-WHEN sobre un bit, construiremos dos caminos:
-    #  - Si primera == 1, comprobamos segunda: JUMP-WHEN @P1_IS_1 segunda[0]
-    #  - Si primera == 0, comprobamos segunda (invirtiendo la lógica) usando JUMP-WHEN @P1_IS_0 segunda[0]
-    #
-    # Simpler approach: encode equality by combining conditions into two JUMP-WHEN checks:
-    #   - if primera == 1 AND segunda == 1 -> penalizar
-    #   - if primera == 0 AND segunda == 0 -> penalizar
-    #
-    # We'll emit explicit Quil. Use the .name of declared memories for text insertion.
-    p += f"JUMP-WHEN @CHECK_P1_IS_1 {primera_medicion.name}[0]\n"
-    p += "JUMP @CHECK_P1_IS_0\n"
-    p += "LABEL @CHECK_P1_IS_1\n"
-    # aquí: primera == 1 -> penalizar si segunda == 1
-    p += f"JUMP-WHEN @PENALIZAR {segunda_medicion.name}[0]\n"
-    p += "JUMP @END_CHECK_EQ\n"
-    p += "LABEL @CHECK_P1_IS_0\n"
-    # aquí: primera == 0 -> penalizar si segunda == 0
-    # JUMP-WHEN tests for '1', so we jump to skip penalization when segunda == 1
-    p += f"JUMP-WHEN @SKIP_PENAL {segunda_medicion.name}[0]\n"
-    # segunda == 0 => penalizar
-    p += "LABEL @PENALIZAR\n"
-    p += "X 0\n"               # penalización: invertir qubit 0
-    p += "JUMP @END_CHECK_EQ\n"
-    p += "LABEL @SKIP_PENAL\n"
-    p += "JUMP @END_CHECK_EQ\n"
-    p += "LABEL @END_CHECK_EQ\n"
-    
-    # Finalmente, escribimos los resultados de los qubits en ro para cada shot
-    p += MEASURE(0, ro[0])  # J1 final (pos-penalización)
-    # ro[1] ya fue escrito antes con el jugador 2 de la primera medida, pero sobreescribimos
-    # para asegurar consistencia con la ejecución actual (aquí medimos J2 actual otra vez)
-    p += MEASURE(1, ro[1])
-    
-    print("Circuito con control IF/ELSE (Quil explícito):")
-    print(p)
+    ro1 = p1.declare('ro', 'BIT', 2)
+    ro2 = p2.declare('ro', 'BIT', 2)
+
+    # PRIMERA TIRADA
+    p1 += H(1)
+    p1 += MEASURE(0, ro1[0])
+    p1 += MEASURE(1, ro1[1])
+
+    # SEGUNDA TIRADA
+    p2 += H(1)
+    p2 += MEASURE(0, ro2[0])
+    p2 += MEASURE(1, ro2[1])
+
+    print("Circuito de la PRIMERA tirada:")
+    print(p1)
+    print("\nCircuito de la SEGUNDA tirada:")
+    print(p2)
     print()
-    
-    # Ejecutar 20 veces
-    p.wrap_in_numshots_loop(20)
-    executable = qc.compile(p)   # ahora debe compilar sin 'Label unresolved'
-    results = qc.run(executable)
-    
-    # results is an array of shape (shots, 2) containing ro bits [J1, J2]
-    print("Resultados de las mediciones:")
-    print(f"{'Tirada':<8} {'Jugador 1':<12} {'Jugador 2':<12} {'Penalizado':<12}")
-    print("-" * 50)
-    for i, out in enumerate(results[:20]):
-        j1, j2 = int(out[0]), int(out[1])
-        # Si primera==segunda we applied X to qubit 0 before final measurement.
-        # We can't directly extract the intermediate primera/segunda from 'ro' here,
-        # but we can detect whether penalización likely occurred by comparing j1 with expected behaviour.
-        # We'll just flag equality by re-simulating: not available here, so show the measured pair.
-        print(f"{i+1:<8} {j1:<12} {j2:<12} {'?' :<12}")
-    
+
+    # Ejecutar 20 veces cada uno
+    p1.wrap_in_numshots_loop(20)
+    p2.wrap_in_numshots_loop(20)
+    executable1 = qc.compile(p1)
+    executable2 = qc.compile(p2)
+    results1 = qc.run(executable1)
+    results2 = qc.run(executable2)
+
+    print("Resultados de las mediciones y penalización:")
+    print(f"{'Tirada':<8} {'J1-1':<8} {'J2-1':<8} {'J1-2':<8} {'J2-2':<8} {'Penalizado':<12}")
+    print("-" * 60)
+    for i, (out1, out2) in enumerate(zip(results1, results2)):
+        j1_1, j2_1 = int(out1[0]), int(out1[1])
+        j1_2, j2_2 = int(out2[0]), int(out2[1])
+        penalizado = 'SÍ' if j1_1 == j1_2 else 'NO'
+        print(f"{i+1:<8} {j1_1:<8} {j2_1:<8} {j1_2:<8} {j2_2:<8} {penalizado:<12}")
+
     print("\n" + "="*70 + "\n")
-    
-    return p, results
+    return (p1, p2), (results1, results2)
 
 
 def juego_con_reintentos_while():
